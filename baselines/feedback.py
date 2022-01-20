@@ -19,7 +19,7 @@ class Feedback(Afterall):
     #                 (sql['time'] -) * sql_count)
 
     def ziegler_nichols(self):
-        # G(x)=Ke^(-tx)/(Tx+1)   其中K为比例系数；T为惯性时间常数；τ为纯延迟时间常数
+        # G(x)=Ke^(-tx)/(Tx+1)   Where k is the scale coefficient; T is the inertial time constant; τ Is a pure delay time constant
         K, T, t = 2, 30, 10
         t=np.arange(0,300,0.02)
         def fun(x):
@@ -42,34 +42,27 @@ class Feedback(Afterall):
         # plt.plot(t,[fun_grad2(x) for x in t],'r',label='s1 Step Response',linewidth=0.5)
         # plt.show()
         # maximum=optimize.fminbound(lambda x:-fun_grad.evalf(subs={'x':x}),0,300)
-        maxpoint=optimize.fminbound(lambda x:-fun_grad2(x),0,300) #切点横坐标
-        maxy=fun2(maxpoint)# 切点纵坐标
-        maxr=fun_grad2(maxpoint) #斜率
-        # 切线与y轴交点(即常数项)
+        maxpoint=optimize.fminbound(lambda x:-fun_grad2(x),0,300) #Abscissa of tangent point
+        maxy=fun2(maxpoint)# Ordinate of tangent point
+        maxr=fun_grad2(maxpoint) # gradient
+        # Intersection of tangent and Y axis (i.e. constant term)
         tangent_b=maxy-maxr*maxpoint
-        # 切线与x轴交点
+        # Intersection of tangent and X axis
         tt=(0-tangent_b)/maxr
         TT=maxpoint-tt
-    #   更新PID参数
+        #  Update PID parameters
         kp=1.2*TT/tt
         ki=2*tt
         kd=0.5*tt
         return kp,ki,kd
 
     def repartition(self, initial_par, wLoad, **kwargs):
-        # SP如何设定？？？？？SP应该是期望的平均成本
-        # optimalController=OptimalController()
-        # SP=optimalController.repartition(initial_par,wLoad) # SP:the desired output value    /    PV:the actual measured value
-        # SP=289.1506 # SP:the desired output value    /    PV:the actual measured value
-        # repartition_threshold=-30
         repartition_threshold=0
         isFirst = True
         start_time=wLoad.sql_list[0]['time']
         collector = {'content':[],
                      'start':start_time}
         pid = PID(1, 0.001, 0)
-        # pid = PID(1, 0, 0)
-        # pid.SetPoint=SP #评价每个查询的执行成本
         pid.setSampleTime(0)
         pid.setLastTime(start_time)
         cur_par_schema = initial_par
@@ -96,13 +89,12 @@ class Feedback(Afterall):
             if pid.output>=5:
                 pid.SetPoint-=10
             """
-            启发式的调参方法：如果PID的误差总是低于阈值，且最近10次，调节的效果不好，output始终维持在某个值附近，说明此时环境已经达到稳定状态，不适合调节，阈值过高，因此需要重新设置阈值为OUTPUT均值-5，是PID停止调节，随着环境的
-            改变，当前状态不适合，OUTPUT值降低，低于阈值，此时，PID需要重新调节，因此可以更新阈值为OUTPUT均值+10。
+            Heuristic parameter adjustment method: if the error of PID is always lower than the threshold, and the adjustment effect is not good in the last 10 times, and the output is always maintained near a certain value, it indicates that the environment has reached a stable state and is not suitable for adjustment. 
+            The threshold is too high. Therefore, it is necessary to reset the threshold to output mean value - 5. PID stops adjustment. With the change of environment, the current state is not suitable, The output value decreases below the threshold. At this time, the PID needs to be readjusted, so the threshold can be updated to the average value of output + 10.
             """
             # if len(latest_output_set) >= 10:
             #     latest_output_set.pop(0)
             # latest_output_set.append(pid.output)
-            # print('标准差：', np.std(latest_output_set, ddof=1))  # 求标准差
 
             # if len(latest_output_set) >= 10 and np.std(latest_output_set, ddof=1) < 0.5 and is_add:
             #     repartition_threshold = np.mean(latest_output_set) - 5
@@ -116,16 +108,7 @@ class Feedback(Afterall):
                 #     is_add = True
                 time0 = time.time()
                 min_schema, cost_increment = self.partition(collector['content'], wLoad, cur_par_schema)
-                # temp_cur_par_schema = cur_par_schema.copy()
-                # if len(temp_cur_par_schema) == 1 and len(temp_cur_par_schema[0]) == 50:
-                #     temp_cur_par_schema = [[num] for num in range(50)]
-                # # new par需要加上之前未替换的分区
-                # for par in temp_cur_par_schema:
-                #     temp_par = par.copy()
-                #     for par_new in min_schema:
-                #         if Util.list_solved_list(par_new, temp_par):
-                #             [temp_par.remove(attr) for attr in par_new if attr in temp_par]
-                #     if temp_par: min_schema.append(temp_par)
+                
                 operator_cost = DiskIo.compute_repartitioning_cost(cur_par_schema, min_schema, wLoad.attrs_length)
                 self.optimize_time+=time.time()-time0
                 total_actions+=1
@@ -139,18 +122,11 @@ class Feedback(Afterall):
                     last_time=cur_time
                     total_rep_blocks +=operator_cost
                     total_sql_num+=sum([item.frequency for item in collector['content']])
-                    print("时刻",cur_time,",与上一时刻间隔负载成本为:",cost_blocks,",更新分区方案为:",min_schema)
                     cur_par_schema=min_schema
                     collector['content']=[]
-        # 282.7867
         if len(collector['content']) > 0:
             total_blocks.append(DiskIo.compute_cost(collector['content'], cur_par_schema, wLoad.attrs_length))
         self.action_ratio = [true_actions, round(true_actions / total_actions, 3)]
         total_freq=(sum([sql['feature'].frequency for sql in wLoad.sql_list]))
-        print(cost_time_map['cost'])
-        print(cost_time_map['cdf'])
         return sum(total_blocks)/total_freq , total_rep_blocks/total_freq
 
-
-# [9187.0, 15376.0, 6814.0, 24602.0, 24646.0, 28276.0, 7631.0, 31946.0, 26608.0, 11712.0, 20599.0, 3504.0, 10477.0]
-# [9187.0, 15376.0, 6814.0, 24602.0, 24670.0, 35586.0, 29601.0, 87683.0]

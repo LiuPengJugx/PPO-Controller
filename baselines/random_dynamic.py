@@ -31,8 +31,6 @@ class RandomDynamic(Algorithm):
         action_map = [8,40,70,130,180,270]
         for idx,sql in enumerate(wLoad.sql_list):
             if collector.shape[0]>=2:
-                # 数据库处于低功耗状态时
-                # print(f"time0:{wLoad.sql_list[idx-1]['time']} time1:{sql['time']}")
                 if (sql['time'] in action_map) or (sql['time']>=begin_time+2 and isFirst):
                     if sql['time'] in action_map:action_map.remove(sql['time'])
                     isFirst=False
@@ -46,7 +44,6 @@ class RandomDynamic(Algorithm):
                         true_actions+=1
                         self.action_list[sql['time']] = min_schema
                         total_rep_blocks+=operator_cost
-                        print("时刻",wLoad.sql_list[idx-1]['time'],",更新分区方案为:",min_schema,",预计成本收益为:",cost_increment)
                         cur_par_schema=min_schema
                     collector=np.array([])
             collector=np.append(collector,sql['feature'])
@@ -55,13 +52,3 @@ class RandomDynamic(Algorithm):
         self.action_ratio=[true_actions,round(true_actions/total_actions,3)]
         total_freq=(sum([sql['feature'].frequency for sql in wLoad.sql_list]))
         return total_blocks/total_freq,total_rep_blocks/total_freq
-
-# action_map=[5,40,70,130,180,270,320,400,420,470]
-        # {1500: [[239.51, 0.45]],
-        # 3000: [[242.57, 0.25]],
-        # 10000: [[263.85, 0.06]],
-        # 12000: [[386.17, 0.1]],
-        # 2600: [[341.32, 0.4]],
-        # 4000: [[394.23, 0.36]],
-        # 5000: [[393.4, 0.23]],
-        # 1300: [[408.02, 0.74]]}

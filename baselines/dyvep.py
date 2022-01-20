@@ -47,7 +47,6 @@ class Dyvep(Afterall):
                     operator_cost = DiskIo.compute_repartitioning_cost(cur_par_schema, min_schema,wLoad.attrs_length)
                     if min_schema != cur_par_schema and cost_increment>operator_cost:
                         self.action_list[sql['time']] = min_schema
-                        print("时刻", sql['time'], ",更新分区方案为:", min_schema, ",预计成本收益为:", cost_increment)
                         total_rep_blocks += operator_cost
                         cur_par_schema=min_schema
                 collector = np.array([sql['feature']])

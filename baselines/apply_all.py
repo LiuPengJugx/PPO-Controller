@@ -26,13 +26,10 @@ class Applyall(Afterall):
                 self.action_list[cur_time] = min_schema
                 total_blocks+=DiskIo.compute_cost(collector,cur_par_schema,wLoad.attrs_length)
                 total_rep_blocks+=operator_cost
-                print("时刻",cur_time,",更新分区方案为:",min_schema,",预计成本收益为:",cost_increment)
                 cur_par_schema=min_schema
                 collector.clear()
         if len(collector)>0:
             total_blocks += DiskIo.compute_cost(collector, cur_par_schema, wLoad.attrs_length)
-        # 254.56037189084762  最优情况下,平均每个查询的成本(不考虑分区操作成本)
-        # 275.1814779038879(考虑分区操作成本)
         self.action_ratio = [true_actions, round(true_actions / total_actions, 3)]
         total_freq=(sum([sql['feature'].frequency for sql in wLoad.sql_list]))
         return total_blocks/total_freq,total_rep_blocks/total_freq

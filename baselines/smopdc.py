@@ -97,7 +97,6 @@ class Smopdc:
         min_cost=init_cost=DiskIo.compute_cost(windowsql,cur_par_schema,wLoad.attrs_length)
         min_schema=cur_par_schema
         for schema in self.candidated_par_schemas:
-            # 对schema补全
             merged_schema= list(chain.from_iterable(schema.copy()))
             for attr in range(len(wLoad.attrs_length)):
                 if attr not in merged_schema:
@@ -124,7 +123,7 @@ class Smopdc:
             n+=sql['feature'].frequency
         fn/=n
         self.za=self.compute_z_score(wLoad)
-        self.ca=(2*self.za-0.2)/2 #置信区间
+        self.ca=(2*self.za-0.2)/2 #confidence interval
         N=math.ceil((self.za**2)*(fn*(1-fn)/(self.ca**2)))
         print(N)
         collector=np.array([])
@@ -147,7 +146,6 @@ class Smopdc:
                     true_actions+=1
                     self.action_list[sql['time']] = min_schema
                     total_rep_blocks+=operator_cost
-                    print("时刻",sql['time'],",更新分区方案为:",min_schema,",预计成本收益为:",cost_increment)
                     cur_par_schema=min_schema
                 collector=np.array([])
         if collector.shape[0]>0:

@@ -29,7 +29,7 @@ class Afterall(Algorithm):
         begin_time=wLoad.sql_list[0]['time']
         for idx,sql in enumerate(wLoad.sql_list):
             if collector.shape[0]>=2:
-                # 数据库处于低功耗状态时
+                # When the database is in a low power state
                 # print(f"time0:{wLoad.sql_list[idx-1]['time']} time1:{sql['time']}")
                 if sql['time']-wLoad.sql_list[idx-1]['time']>=3 or (sql['time']>=begin_time+2 and isFirst):
                     isFirst=False
@@ -43,7 +43,6 @@ class Afterall(Algorithm):
                         true_actions+=1
                         self.action_list[sql['time']] = min_schema
                         total_rep_blocks+=operator_cost
-                        print("时刻",wLoad.sql_list[idx-1]['time'],",更新分区方案为:",min_schema,",预计成本收益为:",cost_increment)
                         cur_par_schema=min_schema
                     collector=np.array([])
             collector=np.append(collector,sql['feature'])

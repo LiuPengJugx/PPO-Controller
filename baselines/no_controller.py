@@ -3,7 +3,6 @@ import numpy as np
 from controller.db.disk_io import DiskIo
 class NoController(Afterall):
     def repartition(self, initial_par, wLoad, **kwargs):
-        print("执行 No-controller方法！")
         self.action_list=dict()
         collector = np.array([])
         for idx, sql in enumerate(wLoad.sql_list):
