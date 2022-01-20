@@ -29,7 +29,6 @@ class AdapterController:
             res_map.append(self.get_schema_metrics(algo.action_list))
         # [print(res) for res in res_map]
         return res_map
-        # #检查负载矩阵变化
         # for algo in self.algorithms:
         #     algo.repartition(initial_par,self.wLoad)
         #     self.compute_affinity_matrix_change(algo.action_list)
@@ -64,7 +63,6 @@ class AdapterController:
         jta=JTA()
         latency_list=list()
         throughput_list=list()
-        # 对比： 估计磁盘IO成本和实际运行时间成本
         # cur_par_schema = [[i for i in range(50)]]
         for key in txn_list.keys():
             queries=txn_list[key]
@@ -73,7 +71,6 @@ class AdapterController:
             txn_count+=result.txn_count
             latency+=result.costTime
             latency_list.append(round(result.costTime,3))
-            # 进行重分区操作
             if key in action_list.keys():
                 if action_list[key]:
                     result2=t.repartition(action_list[key])
