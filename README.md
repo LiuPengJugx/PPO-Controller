@@ -1,6 +1,6 @@
 ### Learning dynamic partitioning  based on deep reinforcement learning
 
-This is the project code of dynamic partition algorithm PPO controller. This is the project code of dynamic partition algorithm PPO controller. The contents and functions of each directory are listed below.
+This is the project code of dynamic partition algorithm PPO controller. The contents and functions of each directory are listed below.
 
 #### Project structure description：
 
