@@ -22,7 +22,7 @@ class Workload:
                     if val==1:
                         value[column_i]=1
                         affinity_matrix[column_i][column_i]+=sql.frequency
-                        # 更新亲和度矩阵
+                        # Update affinity matrix
                         for i,v in enumerate(value[:column_i]):
                             if v==1:
                                 affinity_matrix[i][column_i]+=sql.frequency
@@ -40,7 +40,7 @@ class Workload:
                     if val==1:
                         value[column_i]=1
                         affinity_matrix[column_i][column_i]+=sql.frequency
-                        # 更新亲和度矩阵
+                        # Update affinity matrix
                         for i,v in enumerate(value[:column_i]):
                             if v==1:
                                 affinity_matrix[i][column_i]+=sql.frequency
@@ -61,7 +61,7 @@ class Workload:
                     if val==1:
                         value[column_i]=1
                         affinity_matrix[column_i][column_i]+=sql.frequency*sql.selectivity*100
-                        # 更新亲和度矩阵
+                        # Update affinity matrix
                         for i,v in enumerate(value[:column_i]):
                             if v==1:
                                 affinity_matrix[i][column_i]+=sql.frequency*sql.selectivity*100
@@ -79,7 +79,7 @@ class Workload:
                     if val==1:
                         value[column_i]=1
                         affinity_matrix[column_i][column_i]+=sql.frequency*sql.selectivity*100
-                        # 更新亲和度矩阵
+                        # Update affinity matrix
                         for i,v in enumerate(value[:column_i]):
                             if v==1:
                                 affinity_matrix[i][column_i]+=sql.frequency*sql.selectivity*100
@@ -97,7 +97,7 @@ class Workload:
                 if val==1:
                     value[column_i]=1
                     affinity_matrix[column_i][column_i]+=sql.frequency
-                    # 更新亲和度矩阵
+                    # Update affinity matrix
                     for i,v in enumerate(value[:column_i]):
                         if v==1:
                             affinity_matrix[i][column_i]+=sql.frequency
@@ -187,7 +187,7 @@ class Workload:
     def mask_par_matrix(self,sqls,par_schema):
         n = self.attr_num
         affinity_matrix = np.array(([[0] * n]) * n)
-        # 对1个分区的情况进行特殊处理
+        # Special treatment for the case of only one partition
         if len(par_schema)==1:
             par_schema=[[i] for i in range(n)]
         for sql in sqls:

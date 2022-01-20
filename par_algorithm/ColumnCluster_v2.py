@@ -118,9 +118,9 @@ class ColumnCluster:
         optimal_candidate_paritions = self.get_bast_partition_res(min_cluster)
         return optimal_candidate_paritions
 
-    # 递归函数
+    # recursion function
     def split_candidate_parition_by_cut_reward( self,complete_column_range, temp_candidates2):
-        # 如果要分割的聚簇只有一个元素，直接返回即可
+        # If the cluster to be split has only one element, you can return it directly
         if (len(complete_column_range) == 1): return [complete_column_range]
         temp_candidates = temp_candidates2.copy()
         L = self.get_freq_set_by_range(complete_column_range)
@@ -138,16 +138,16 @@ class ColumnCluster:
         splited_paritions = []
         left_unsplited_par = copy.deepcopy(complete_column_range)
         while (True):
-            # 如果频繁项集列表为空，表明候选项已经排列完毕
+            # If the frequent itemset list is empty, it indicates that the candidates have been arranged
             if len(freq_item_dict) == 0:
                 if len(left_unsplited_par) > 0: splited_paritions.append(left_unsplited_par)
                 break
-            # 选择第一个奖励最大的频繁项
+            # Select the first frequent item with the largest reward
             freq_item_dict.sort(key=lambda x: (x["val"]), reverse=True)
             current_cut_item = freq_item_dict[0]
             freq_item_dict.remove(current_cut_item)
             left_unsplited_par = list(set(left_unsplited_par) - set(current_cut_item['fre_item'][0]))
-            # 被切割过的分区 也有可能会被二次切割
+            # The cut partition may also be re cut
             if (len(left_unsplited_par) == 0):
                 other_temp_candidates = temp_candidates.copy()
             else:
@@ -163,11 +163,8 @@ class ColumnCluster:
             # i=0
             for i in range(len(freq_item_dict) - 1, -1, -1):
                 freq_item = freq_item_dict[i]
-                # for i,freq_item in enumerate(reversed(freq_item_dict)):
-                if Util.list_in_list(freq_item['fre_item'][0], left_unsplited_par):
-                    # main_frament_cost由于是相对比较，所以不需要再计算
+                if Util.list_in_list(freq_item['fre_item'][0], left_unsplited_par):      
                     n_avg_sel = 0
-
                     update_freq_item = self.update_reward_fun_update(current_cut_item, freq_item,
                                                                  temp_candidates)
                     if len(freq_item['fre_item'][0]) == len(left_unsplited_par):
@@ -204,7 +201,7 @@ class ColumnCluster:
                 candidate_clusters.remove(split_cluster)
                 for new_cluster in new_split_clusters:
                     candidate_clusters.append(new_cluster)
-        # 寻找合并方案
+        # Looking for a consolidation scheme
         combine_schema = self.combine_candidate_parition_by_combine_reward( candidate_clusters)
         for item in combine_schema:
             for par in item['o_clusters']:
@@ -221,7 +218,7 @@ class ColumnCluster:
         for itemset in reversed(L):
             for key in itemset:
                 if len(key) < 2: continue
-                # 判断原簇方案是否可以组成该频繁项集
+                # Judge whether the original cluster scheme can form the frequent itemset
                 temp_key = []
                 for item_cluster in to_combined_clusters:
                     if Util.list_solved_list(item_cluster, key):
@@ -229,7 +226,7 @@ class ColumnCluster:
                 if set(key) <= set([y for x in temp_key for y in x]):
                     if temp_key in temp_combined_cluster:continue
                     temp_combined_cluster.append(temp_key)
-                    # 计算合并收益
+                    # Calculation of consolidated income
                     temp_combined_clusters = to_combined_clusters.copy()
                     [temp_combined_clusters.remove(cluster) for cluster in temp_key]
                     temp_combined_clusters.append([x for item in temp_key for x in item])
@@ -241,7 +238,7 @@ class ColumnCluster:
         freq_item_dict.sort(key=lambda x: (x["val"]), reverse=True)
         while (True):
             if len(freq_item_dict) == 0: break
-            # 选择第一个奖励最大的频繁项
+            # Select the first frequent item with the largest reward
             freq_item_dict.sort(key=lambda x: (x["val"]), reverse=True)
             current_combined_item = freq_item_dict[0]['item']
             combine_schema.append({
@@ -265,12 +262,12 @@ class ColumnCluster:
 
     def cut_reward_fun_update(self, splited_column, temp_candidates2):
         temp_candidates = temp_candidates2.copy()
-        # 只访问b段属性的查询数量为𝑛_1,只访问c段属性的查询数量为𝑛_2，既访问b又访问c段属性的查询数量为𝑛_3。
+        # The number of queries that only access segment B attributes is n1. The number of queries that only access segment C attributes is n2. The number of queries accessing both segment B and segment C attributes is n3
         b_parition = splited_column[0]
         c_parition = splited_column[1]
         res = {
             'fre_item': [b_parition, c_parition],
-            # 考虑整体分区方案的，而不是原始簇内的子分区
+            # Consider the overall partition scheme, rather than the sub partitions in the original cluster
             'val': DiskIo.compute_cost(self.QUERYS, temp_candidates + [b_parition + c_parition],
                                          self.ATTRS_LENGTH) - DiskIo.compute_cost(self.QUERYS, splited_column + temp_candidates,
                                                                                self.ATTRS_LENGTH),
@@ -278,7 +275,7 @@ class ColumnCluster:
         return res
 
 
-    # 由于已经确定好切割的频繁项，所以avg_sel,n3_matrix_ind可以事先计算出来，不影响update
+    # Since the frequent items of cutting have been determined, avg_sel,n3_matrix_ind can be calculated in advance without affecting the update
     def update_reward_fun_update(self,last_cut_info, my_cut_info, temp_candidates2):
         temp_candidates = temp_candidates2.copy()
         before_change_par = [last_cut_info['fre_item'][1]]

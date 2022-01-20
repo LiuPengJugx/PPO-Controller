@@ -1,11 +1,6 @@
 import psycopg2
 class Pg:
-    # def __init__(self):
-    #     self.database="postgres"
-    #     self.user = "liupengju"
-    #     self.password = "liupengju"
-    #     self.host = "10.77.110.152"
-    #     self.port = "5433"
+
     def __init__(self):
         self.database="postgres"
         self.user = "postgres"

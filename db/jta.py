@@ -26,7 +26,7 @@ class JTA:
         self.cur.close()
         self.conn.close()
 
-# 创建初始表
+# Create original table
 if __name__=='__main__':
     jta=JTA()
 

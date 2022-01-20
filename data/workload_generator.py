@@ -23,8 +23,8 @@ def maxminnorm(arr):
 
 def generate_random_query(attr_num_complete,query_num,total_time,start_time,maximum_sigma_percentage):
     # choose access attributes
-    # 每个查询所有属性的方差波动范围都是一样的
-    # 将属性范围分成5份,随机选中某一份
+    # The variance fluctuation range of all attributes of each query is the same
+    # Divide the attribute range into 5 parts and select one at random
     cut_num=5
     attr_split_list=[]
     # for i in range(0,9):
@@ -51,7 +51,7 @@ def generate_random_query(attr_num_complete,query_num,total_time,start_time,maxi
         range_lower, range_upper = attr_split_list[range_integer][0], attr_split_list[range_integer][1]
 
         mid_point = round((range_lower + range_upper) / 2)
-        # 控制sql访问属性的数量
+        # Controls the number of accessed attributes in SQL
         access_attr_sum = random.randint(1, attr_num_complete/cut_num)
         for i in range(range_lower, range_upper + 1):
             sigma = random.uniform(0, (range_upper - mid_point) * maximum_sigma_percentage)
@@ -90,18 +90,18 @@ def generate_random_query(attr_num_complete,query_num,total_time,start_time,maxi
         base_index+=2*phase
         query_num_rest-=int(query_num/steps)
     poisson_data=poisson_data.astype(int)
-    # 为access_attr_list 生成其他的特征
+    # Generate additional features for access_attr_list
     for iter,access_attr in enumerate(access_attr_list):
         # choose frequency
         if is_generate_perform<=5:
             freq=random.randint(round(query_num/10),round(query_num/8))
             is_generate_perform+=1
         else:
-            # 干扰query ：1~20之间的整数
+            #  frequency: 1~20
             freq=random.randint(1,20)
 
         # choose access keys
-        # access_attr范围内之间的a个整数,其中0<=a<=2
+        # a integers within the range of access_attr, and 0<=a<=2
         scan_key_num=min(random.randint(0,2),len(access_attr))
         scan_attr=[]
         for i in random.sample(access_attr,scan_key_num):
@@ -117,20 +117,8 @@ def generate_random_query(attr_num_complete,query_num,total_time,start_time,maxi
 
 
 def main():
-    # attr_num_list=[30,50,100,200]
-    # attr_num_list=[30,50,60,65,75,80,100,125,150,175]
-    # for i in range(1,6):
-    #     for attr_num in attr_num_list:
-    #         # attr_num=100
-    #         query_num=1000
-    #         querys=generate_random_query(attr_num,query_num)
-    #         df=DataFrame(querys)
-    #         print(querys)
-    #         df.to_csv("/home/liupengju/pycharmProjects/SCVP-V3/data/random%d/%dattr.csv"%(i,attr_num),header=0,index=0)
-    
-    # query_num_list=[200,500,1000,2000,5000]
-    # query_num_list=[300,500,500]  #产生3个时间段，每个时段300+500+500=1300数量查询的负载集，
-    # T=[60,20,60] #负载流的时间（必须是20的倍数）
+    # query_num_list=[300,500,500]  #Generate three time periods, 300 + 500 + 500 = 1300 queries of workload in each period,
+    # T=[60,20,60] # Time of workload flow (must be a multiple of 20)
     maximum_sigma_percentage_list=[0.5,0.5,0.5,0.2,0.2,0.2]
     query_num_list=[300,500,500,300,500,500]
     T=[60,20,60,60,20,60]

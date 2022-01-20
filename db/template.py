@@ -66,7 +66,7 @@ def cal_subtable_by_partition_time(querys, path, partitions):
             tpch_tables[tb_name]['attrs'][attr_id], tpch_tables[tb_name]['types'][attr_id])
             # if idx==len(partition)-1:
         create_tb_sql += ");\n"
-        # 插入数据语句
+        # Insert statement
         if (partition.count(0) > 0):
             partition.remove(0)
         attr_list = ",".join([tpch_tables[tb_name]["attrs"][x] for x in [0] + partition])
@@ -110,7 +110,7 @@ def cal_subtable_by_partition_time(querys, path, partitions):
 
 
 def getPgConn():
-    # 创建连接对象
+    # Create connection object
     conn = psycopg2.connect(database="postgres", user="postgres", password="root", host="localhost", port="5432")
     return conn
 
@@ -128,13 +128,13 @@ def getCardinityByTable(tb_name):
 
 def vpExperiment(create_tb_sql, insert_tb_sql, drop_tb_sql, original_query, update_query):
     conn = getPgConn()
-    cur = conn.cursor()  # 创建指针对象
+    cur = conn.cursor()  # Create pointer object
 
-    # # 创建表
+    # # Create table structure
     for line in create_tb_sql.split(";\n")[:-1]:
         cur.execute(line + ";")
     conn.commit()
-    # 插入数据
+    # insert data.
     for line in insert_tb_sql.split("\n")[:-1]:
         cur.execute(line)
     conn.commit()
@@ -142,29 +142,24 @@ def vpExperiment(create_tb_sql, insert_tb_sql, drop_tb_sql, original_query, upda
     # lines=original_query.split("\n")
     for line in original_query.split("\n")[:-1]:
         cur.execute(line)
-        # print("%s 执行结果：affect %d",cur.rowcount)
     conn.commit()
 
     time2 = time.time()
     for line in update_query.split("\n")[:-1]:
         cur.execute(line)
-        # print("%s 执行结果：affect %d",cur.rowcount)
     conn.commit()
 
     time3 = time.time()
-    print("原查询时间:", time2 - time1)
-    print("分区后查询时间:", time3 - time2)
 
-    # 删除表
+    # delete table
     for line in drop_tb_sql.split("\n")[:-1]:
         cur.execute(line)
     conn.commit()
-    # 关闭连接
+    # close connection
     cur.close()
     conn.close()
     return (time2 - time1 - time3 + time2)
 
 
 if __name__ == '__main__':
-    # print(generate_subtable_by_partition("customer",[[2, 7], [1], [4, 5], [6], [3], [0]]))
     print(cal_subtable_by_partition_time("customer", "data/tpch/customer.csv", [[0, 3], [6], [4, 5], [1, 2, 4, 7]]))

@@ -58,13 +58,11 @@ class Env4(gym.Env):
             if len(self.workload[self.time_point]) == 0:
                 self.temp_mask_affinity_matrix = state
                 return state, 0, self.done, {}
-            # time0 = time.time()
             # get partition schema and compute reward
             new_par_schema,cluster_start_time = partition_by_wide_workload(self.workload,self.w)
             temp_cur_par_schema=self.cur_par_schema.copy()
             if len(temp_cur_par_schema) == 1 and len(temp_cur_par_schema[0]) == 50:
                 temp_cur_par_schema=[[num] for num in range(50)]
-            # new par需要加上之前未替换的分区
             for par in temp_cur_par_schema:
                 temp_par=par.copy()
                 for par_new in new_par_schema:
@@ -94,24 +92,7 @@ class Env4(gym.Env):
                 self.action_list[self.time_point]=new_par_schema
             elif reward!=0:
                 reward=(reward-self.reward_threshold*3/5)
-            # else:
-            #     # reward为正，但值过小，可以理解为：此时可以有略微提升，但控制器认为仍需要维持现状.但也有可能是，分区算法考虑的负载范围较大，不适应后续的负载。
-            #     if reward>0:
-            #         self.adjust_times+=1
-            #         # print("调整次数:",self.adjust_times)
-            #         if self.adjust_times>=self.adjust_range_threshold:
-            #             self.io_cost.append(io_cost)
-            #             self.rep_cost.append(operation_cost)
-            #             self.cur_par_schema = new_par_schema
-            #             self.cost_time_map['cost'].append(f"({self.last_time_point + 1} {self.time_point})->{io_cost}")
-            #             self.cost_time_map['cdf'].append(f"{self.time_point}->{sum(self.io_cost)}")
-            #             self.last_time_point = self.time_point
-            #             self.temp_mask_affinity_matrix = np.array(([[0] * self.w.attr_num]) * self.w.attr_num)
-            #             state = self._get_state(self.time_point+1)
-            #             self.adjust_times = 0
-            #             print("~~~~~~ time stage:", str([self.last_time_point, self.time_point]), " , step:",self.steps, " , reward:", reward, " ,done:", self.done,' ,cost_blocks:',io_cost,' ,current par:',new_par_schema)
-            #             self.action_list[self.time_point] = new_par_schema
-            #             self.adjust_times = 0
+
             self.temp_mask_affinity_matrix=state
             # print("State:", np.sum(state, axis=0))
             return state, reward, self.done, {}
@@ -133,7 +114,6 @@ class Env4(gym.Env):
         front_cost = DiskIo.compute_cost(temp_workload, old_par_schema, self.w.attrs_length)
         after_cost = DiskIo.compute_cost(temp_workload, new_par_schema, self.w.attrs_length)
         io_cost = DiskIo.compute_cost(time_diff_workload, old_par_schema, self.w.attrs_length)
-        # 由于对未来负载情况未知，增加理想成本和操作成本的权重系数w1、w2
         w1, w2 = self.cost_weight[0], self.cost_weight[1]
         reward = ((front_cost - after_cost) * w1 - operation_cost * w2) / front_cost
         return reward, io_cost

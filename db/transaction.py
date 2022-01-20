@@ -39,7 +39,7 @@ class Transaction:
         new_tab_list=[]
         for index in pre_allow_no:
             sub_tab_name = tb_name + "sub" + str(index)
-            # 删除被替换的原始子表
+            # Delete the replaced original child table
             if index in PM.cur_partitions.keys():
                 drop_tb_sql += "DROP TABLE %s;\n" % (sub_tab_name)
                 PM.cur_partitions.pop(index)
@@ -49,41 +49,39 @@ class Transaction:
                 create_tb_sql+="DROP TABLE IF EXISTS %s;\n"%(sub_tab_name)
                 create_tb_sql += "CREATE TABLE %s ( %s %s" % (
                     sub_tab_name, PM.test_tables['attrs'][0], PM.test_tables['types'][0])
-                # 不再每个表重复建主键
-                # create_tb_sql += "CREATE TABLE %s ( " % (sub_tab_name)
                 for idx, attr_id in enumerate(partition):
                     if attr_id == 0:
                         continue
                     create_tb_sql += ",\n%s %s" % (
                         PM.test_tables['attrs'][attr_id], PM.test_tables['types'][attr_id])
                 create_tb_sql += ");\n"
-                # 插入数据语句
+                # Insert statement
                 if partition.count(0) == 0:
                     tmp_par = [0]+partition
                 else: tmp_par = partition
                 attr_list = ",".join([PM.test_tables["attrs"][x] for x in tmp_par])
                 # attr_list = ",".join([PM.test_tables["attrs"][x] for x in partition])
                 insert_tb_sql += "INSERT INTO %s (SELECT %s from %s);\n" % (sub_tab_name, attr_list, tb_name)
-                #  更新字典分区
+                # Update dictionary partition
                 PM.cur_partitions[index] = partition
         result = Resultset()
         result.startTime = time.time()
-        # 如果子表存在，删除子表，重新建表
+        # If the sub table exists, delete the sub table and re create the table
         for line in drop_tb_sql.split("\n")[:-1]:
             self.jta.query(line)
         self.jta.commit()
-        # # 创建表
+        # create table
         for line in create_tb_sql.split(";\n")[:-1]:
             self.jta.query(line + ";")
-        # 插入数据
+        # insert data
         for line in insert_tb_sql.split("\n")[:-1]:
             self.jta.query(line)
         self.jta.commit()
         result.finishTime = time.time()
         result.succeed = True
-        print(f"时间点：{self.time_point} , 修改分区数量：{len(pre_allow_no)}")
+        print(f"Time point：{self.time_point} , the number of updated partitions：{len(pre_allow_no)}")
         print(sorted(PM.cur_partitions.values()))
-        # 为防止新生成的表，首次访问造成的查询速度的影响，事先全表扫描一遍
+        # In order to prevent the impact of the query speed caused by the first access of the newly generated table, scan the whole table in advance
         for sub_tab_name in new_tab_list:
             prepared_query="SELECT * FROM %s;"%(sub_tab_name)
             self.jta.query(prepared_query)
@@ -97,7 +95,7 @@ class Transaction:
         result = Resultset()
         for sql_dict in self.queries:
             result.txn_count+=sql_dict.frequency
-            # 根据分区结果，拆解SQL语句
+            # Disassemble the SQL statements according to the partition results
             attr_indxs = [attr_idx for attr_idx, attr_val in enumerate(sql_dict.attributes) if attr_val == 1]
             for idx in PM.cur_partitions.keys():
                 partition=PM.cur_partitions[idx]
@@ -118,7 +116,7 @@ class Transaction:
                         predicate_conds = " and ".join(['a' + str(i) + "<>'1'" for i in cur_scan_key])
                         converted_query += ("SELECT %s FROM %s WHERE %s;\n" % (attr_list_str, sub_tb_name, predicate_conds))
                     query_weight.append(sql_dict.frequency)
-            # 未分区时，sql执行
+            # Execute SQL when not partitioned
             if len(PM.cur_partitions.keys())==0:
                 # attr_list=",".join(['a'+str(i) for i in attr_indxs])
                 if not sql_dict.scan_key:
@@ -133,15 +131,11 @@ class Transaction:
                 query_weight.append(sql_dict.frequency)
         result.startTime = time.time()
         assert len(query_weight)==len(converted_query.split(";\n")[:-1])
-        # 执行转换后的语句
+        # Execute the converted statement
         for idx,line in enumerate(converted_query.split(";\n")[:-1]):
             init_time=time.time()
-            # 为了避免随机性，取3次查询结果的平均值
+            # In order to avoid randomness, take the average of the three query results
             [self.jta.query(line + ";") for _ in range(3)]
             result.costTime+=(time.time()-init_time)*query_weight[idx]/3
-        # if time.time()-result.startTime>120*1000:
-        #     self.jta.cancel()
-        #     print("The execute time of query is too long, it will be canceled !")
-        #     return result
         result.succeed=True
         return result

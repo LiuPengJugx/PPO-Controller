@@ -3,9 +3,9 @@ from controller.util import Util
 from controller.par_algorithm.scvp import Scvp
 import numpy as np
 def partition_by_wide_workload(workload,wLoad):
-    # 触发重分区
+    # Trigger repartition
     attr_clusters = []
-    # 根据最近的时间点查找 按时间连接的属性簇
+    # Find attribute clusters connected by time according to the nearest point in time
     time_sequence = sorted(workload.keys(), reverse=True)
     cur_time=time_sequence[0]
     complete_attr_clusters = []
@@ -13,8 +13,6 @@ def partition_by_wide_workload(workload,wLoad):
     while True:
         queries = workload[time_sequence[cnt]].copy()
         not_complete_attr_clusters = []
-        # query的顺序会影响到cluster的分配，后续修改。
-        # 即一个query没有任何一个可分配的cluster时，将其加入队列，等待其他query分配后，可能就有cluster可分配了！！！！！
         QUERIES=[]
         while len(queries)>0:
             item=queries.pop(0)
@@ -36,14 +34,14 @@ def partition_by_wide_workload(workload,wLoad):
             will_combined_cluster = []
             for attr_cluster in attr_clusters:
                 if Util.list_solved_list(attr_cluster['range'], solved_attrs):
-                    # 该query遇到的第一个相关cluster
+                    # The first related cluster encountered by the query
                     if not is_exist:
                         is_exist = True
                         attr_cluster['queries']+=QUERY['Q']
                         [attr_cluster['range'].append(attr) for attr in solved_attrs if attr not in attr_cluster['range']]
-                    # 只要和query相关，都将该cluster添加到combine cluster队列中
+                    # Add the cluster to the combine cluster queue whenever it is related to query
                     will_combined_cluster.append(attr_cluster)
-            # 合并combine cluster队列中的所有元素
+            # Merge all elements in the combine cluster queue
             if will_combined_cluster:
                 new_cluster = will_combined_cluster[0]
                 if len(will_combined_cluster) > 1:
@@ -51,60 +49,27 @@ def partition_by_wide_workload(workload,wLoad):
                         new_cluster['queries'] += item['queries']
                         [new_cluster['range'].append(attr) for attr in item['range'] if
                          attr not in new_cluster['range']]
-                    # 从attr_clusters中清除combine cluster队列中的所有元素
+                    # Clear all elements in the combine cluster queue from attr_clusters
                     [attr_clusters.remove(item) for item in will_combined_cluster[1:]]
                     # attr_clusters.append(new_cluster)
-                # 对有属性范围重合的属性簇进行合并
+                # Merge attribute clusters with overlapping attribute ranges
                 if new_cluster not in not_complete_attr_clusters:
                     not_complete_attr_clusters.append(new_cluster)
-            # 如果在第一、二轮负载中，未找到该查询相关的簇，因此需要为其分配新簇
+            # If no cluster related to the query is found in the first and second round of load, it needs to be assigned a new cluster
             if not is_exist and cnt <= 1:
                 cluster = {'queries': QUERY['Q'], 'range': solved_attrs}
                 attr_clusters.append(cluster)
                 not_complete_attr_clusters.append(cluster)
 
 
-        # for query in queries:
-        #     solved_attrs = [i for i, x in enumerate(query.attributes) if x == 1]
-        #     is_exist = False
-        #     will_combined_cluster = []
-        #     for attr_cluster in attr_clusters:
-        #         if Util.list_solved_list(attr_cluster['range'], solved_attrs):
-        #             # 该query遇到的第一个相关cluster
-        #             if not is_exist:
-        #                 is_exist = True
-        #                 attr_cluster['queries'].append(query)
-        #                 [attr_cluster['range'].append(attr) for attr in solved_attrs if attr not in attr_cluster['range']]
-        #             # 只要和query相关，都将该cluster添加到combine cluster队列中
-        #             will_combined_cluster.append(attr_cluster)
-        #     # 合并combine cluster队列中的所有元素
-        #     if will_combined_cluster:
-        #         new_cluster = will_combined_cluster[0]
-        #         if len(will_combined_cluster) > 1:
-        #             for item in will_combined_cluster[1:]:
-        #                 new_cluster['queries'] += item['queries']
-        #                 [new_cluster['range'].append(attr) for attr in item['range'] if
-        #                  attr not in new_cluster['range']]
-        #             # 从attr_clusters中清除combine cluster队列中的所有元素
-        #             [attr_clusters.remove(item) for item in will_combined_cluster[1:]]
-        #             # attr_clusters.append(new_cluster)
-        #         # 对有属性范围重合的属性簇进行合并
-        #         if new_cluster not in not_complete_attr_clusters:
-        #             not_complete_attr_clusters.append(new_cluster)
-        #     # 如果在第一、二轮负载中，未找到该查询相关的簇，因此需要为其分配新簇
-        #     if not is_exist and cnt <= 1:
-        #         cluster = {'queries': [query], 'range': solved_attrs}
-        #         attr_clusters.append(cluster)
-        #         not_complete_attr_clusters.append(cluster)
-
-        # 清除已完成的属性簇
+        # Clear completed attribute clusters
         for attr_cluster in attr_clusters.copy():
             if attr_cluster not in not_complete_attr_clusters:
-                # 只要加入complete_attr_clusters列表中，就要判断是否具有重合的簇
+                # As long as it is added to the complete_attr_clusters list, it is necessary to judge whether there are coincident clusters
                 flag_combined = False
                 for complete_cluster in complete_attr_clusters:
                     if Util.list_solved_list(complete_cluster['range'], attr_cluster['range']):
-                        # 合并
+                        # Merge
                         complete_cluster['queries'] += attr_cluster['queries']
                         [complete_cluster['range'].append(attr) for attr in attr_cluster['range'] if
                          attr not in complete_cluster['range']]
@@ -112,17 +77,17 @@ def partition_by_wide_workload(workload,wLoad):
                         break
                 if not flag_combined: complete_attr_clusters.append(attr_cluster)
                 attr_clusters.remove(attr_cluster)
-        # 所有的属性簇在本轮负载中均未添加新的元素
+        # All attribute clusters do not add new elements in this round of load
         if not attr_clusters:
             break
         if cnt >= len(time_sequence)-1:
-            # 时间达到尽头，若attr_clusters中有元素，应加入到complete_attr_clusters中
-            # 但在加入前，要先判断是否有重合属性的cluster，需要进行合并
+            # Time comes to an end, if attr_clusters has elements, which should be added to complete_attr_clusters
+            # However, before adding, you must first judge whether there are clusters with coincident attributes, which need to be merged
             for attr_cluster in attr_clusters:
                 flag_combined = False
                 for complete_cluster in complete_attr_clusters:
                     if Util.list_solved_list(complete_cluster['range'], attr_cluster['range']):
-                        # 合并
+                        # Merge
                         complete_cluster['queries'] += attr_cluster['queries']
                         [complete_cluster['range'].append(attr) for attr in attr_cluster['range'] if
                          attr not in complete_cluster['range']]
@@ -133,14 +98,13 @@ def partition_by_wide_workload(workload,wLoad):
         cnt += 1
 
 
-    # 根据属性簇调用分区算法进行分区
+    # Call the partition algorithm to partition according to the attribute cluster
     new_par_schema = []
-    # 对不满足查询类别数的cluster进行剔除
+    # Eliminate clusters that do not meet the number of query categories
     [complete_attr_clusters.remove(cluster) for cluster in complete_attr_clusters.copy() if len(cluster['queries'])<=2]
     for cluster in complete_attr_clusters:
         affinity_matrix = wLoad.compute_affinity_matrix_by_sqls(cluster['queries'])
         new_par_schema += Scvp.partitioner2(affinity_matrix, cluster['queries'], wLoad.attrs_length)
-    print(f"回溯时间:{cur_time}--->{time_sequence[cnt]},聚簇数量:{len(complete_attr_clusters)},分区方案:{new_par_schema}")
     return new_par_schema,time_sequence[cnt]
 
 def partitioner_simulation(wLoad):

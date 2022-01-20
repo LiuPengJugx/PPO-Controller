@@ -21,22 +21,6 @@ def read_csv(file_name,sheet_name):
     }
     return chart_dict
 
-def draw_estimated_cost():
-    sns.set_theme()
-    chart_dict=read_csv('PG数据库实验.xlsx','repartition')
-    # data=chart_dict['data']
-    print(chart_dict)
-    # x=[idx for idx in range(len(data[0]))]
-    sns.color_palette()
-    # for idx,metric_value in data:
-    #     plt.plot(x,metric_value,)
-    # plt.xlabel(chart_dict['row_names'])
-    # plt.ylabel('Avg.Accessed Blocks')
-    # plt.savefig('chart/estimate_cost_curve.svg')
-    data=pd.DataFrame(chart_dict['data'],chart_dict['row_names'],columns=chart_dict['column_names'])
-    sns.lineplot(data=data,palette="tab10",linewidth=2)
-    # sns.catplot(x="sex", y="survived", kind="bar",data=data)
-    plt.show()
 
 def accumulate_val(data,interval):
     new_data=[]
@@ -193,6 +177,5 @@ def draw_latency_throughput():
 
 
 if __name__=='__main__':
-    # draw_estimated_cost()
     draw_latency_throughput()
     # draw_rep_latency()

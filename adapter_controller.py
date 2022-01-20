@@ -18,20 +18,16 @@ import numpy as np
 np.set_printoptions(threshold=np.inf)
 class AdapterController:
     # algorithms = [Afterall(),Smopdc(),Feedback(),PpoController(),OptimalController()]
+    # Specify algorithm
     algorithms = [Applyall(),Smopdc()]
     def experiment(self,file_path):
         res_map=[]
         self.wLoad = Workload(50, file_path)
-        # self.wLoad.prune_sql_list(1500,2001)
         initial_par = [[i for i in range(50)]]
         for algo in self.algorithms:
             algo.repartition(initial_par,self.wLoad)
             res_map.append(self.get_schema_metrics(algo.action_list))
-        # [print(res) for res in res_map]
         return res_map
-        # for algo in self.algorithms:
-        #     algo.repartition(initial_par,self.wLoad)
-        #     self.compute_affinity_matrix_change(algo.action_list)
 
     def compute_affinity_matrix_change(self,action_list:dict):
         start_time=0
@@ -120,13 +116,13 @@ class AdapterController:
 if __name__=='__main__':
     ac=AdapterController()
     result=dict()
+    # Specify dataset
     workload_dict = {
         'data1': [3000, 1300, 4000],
         # 'data1': [1500, 3000, 1300, 4000],
         'data2': [1200, 1350],
         'data3': [1600, 2600]
     }
-    # for query_num in [1300,1500,2600,3000,4000,5000,10000,12000]:
     for path in workload_dict.keys():
         for query_num in workload_dict[path]:
             result[query_num]=ac.experiment(f'data/{path}/{query_num}query-steam.csv')
