@@ -1,0 +1,3 @@
+class Conf:
+    TIME_LINE=10**8
+    TABLE_ATTRIBUTE_NUM=50
